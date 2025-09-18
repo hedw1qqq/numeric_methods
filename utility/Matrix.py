@@ -57,7 +57,7 @@ class Matrix:
             n = int(lines[0].strip())
             data = [list(map(float, line.strip().split())) for line in lines[1:n + 1]]
             return Matrix(data, n)
-
+    @staticmethod
     def read_system_from_file(file_path: str) -> tuple["Matrix", list[float]]:
 
         with open(file_path, 'r') as file:
@@ -124,7 +124,7 @@ class Matrix:
                     pivot_row = i
 
             if pivot_val < 1e-9:
-                raise ValueError("Матрица является сингулярной (вырожденной).")
+                raise ValueError("Матрица является вырожденной.")
 
             if pivot_row != k:
                 U.data[k], U.data[pivot_row] = U.data[pivot_row], U.data[k]
