@@ -57,6 +57,7 @@ class Matrix:
             n = int(lines[0].strip())
             data = [list(map(float, line.strip().split())) for line in lines[1:n + 1]]
             return Matrix(data, n)
+
     @staticmethod
     def read_system_from_file(file_path: str) -> tuple["Matrix", list[float]]:
 
@@ -179,14 +180,11 @@ class Matrix:
 
         # det(A) = (-1)^swaps * det(U)
 
-        try:
-            _, U, _, swaps = self.lu_decomposition()
-            det = math.pow(-1, swaps)
-            for i in range(self.n):
-                det *= U.data[i][i]
-            return det
-        except ValueError:
-            return 0.0
+        _, U, _, swaps = self.lu_decomposition()
+        det = math.pow(-1, swaps)
+        for i in range(self.n):
+            det *= U.data[i][i]
+        return det
 
     def inverse(self) -> "Matrix":
 
@@ -208,3 +206,29 @@ class Matrix:
                 inv_matrix.data[i][j] = x[i]
 
         return inv_matrix
+
+    def transpose(self) -> "Matrix":
+        return Matrix([[self.data[j][i] for j in range(self.n)] for i in range(self.n)], self.n)
+
+    def _get_col(self, j: int) -> list[float]:
+        return [self.data[i][j] for i in range(self.n)]
+
+    def _set_col(self, j: int, col_vec: list[float]):
+        for i in range(self.n):
+            self.data[i][j] = col_vec[i]
+
+    @staticmethod
+    def _dot(v1: list[float], v2: list[float]) -> float:
+        return sum(x * y for x, y in zip(v1, v2))
+
+    @staticmethod
+    def _norm(v: list[float]) -> float:
+        return math.sqrt(Matrix._dot(v, v))
+
+    def _off_diagonal_sum(self) -> float:
+        n = self.n
+        total = 0.0
+        for i in range(n):
+            for j in range(i):
+                total += abs(self.data[i][j])
+        return total
