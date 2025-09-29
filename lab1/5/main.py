@@ -19,7 +19,7 @@ def qr_decomposition(A: "Matrix") -> tuple["Matrix", "Matrix"]:
             r_ij = Matrix._dot(q_i, a_j)
             R.data[i][j] = r_ij
 
-            # v = v - r_ij * q_i
+            #v = a_j - sum(r_ij * q_i)
             v = [v_k - r_ij * q_i_k for v_k, q_i_k in zip(v, q_i)]
 
         norm_v = Matrix._norm(v)
