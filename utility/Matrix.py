@@ -100,15 +100,6 @@ class Matrix:
             raise ValueError("Matrix sizes must match")
 
     def lu_decomposition(self) -> tuple["Matrix", "Matrix", list[int], int]:
-        """
-        Выполняет LU-разложение матрицы с выбором главного элемента (пивотингом).
-        P*A = L*U
-        Возвращает: (L, U, p, swaps)
-        L - нижняя треугольная матрица
-        U - верхняя треугольная матрица
-        p - вектор перестановок
-        swaps - количество перестановок
-        """
         n = self.n
         L = Matrix.eye(n)
         U = self.copy()
@@ -161,9 +152,12 @@ class Matrix:
         return x
 
     def solve(self, b: list[float]) -> list[float]:
-        # b -> Pb
+        # Ax = b
+        # PA = L·U
+        # => Ax = b  <=>  PAx = Pb
+        # => LUx = Pb
         # Ly = Pb
-        # Ly = Pb
+        # Ux = y
         if len(b) != self.n:
             raise ValueError("Размер вектора b не совпадает с размером матрицы.")
 
