@@ -8,7 +8,7 @@ def fixed_point_iteration(
         eps: float,
         max_iter: int = 100
 ) -> Tuple[float, List[Tuple[int, float, float]]]:
-    iterations: List[Tuple[int, float, float]] = []
+    iterations = []
     x = x0
 
     for i in range(max_iter):
@@ -30,8 +30,8 @@ def newton_method(
         eps: float,
         max_iter: int = 100
 ) -> Tuple[float, List[Tuple[int, float, float]]]:
-    iterations: List[Tuple[int, float, float]] = []
-    x= x0
+    iterations = []
+    x = x0
 
     for i in range(max_iter):
         fx = f(x)
