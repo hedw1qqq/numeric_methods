@@ -9,11 +9,11 @@ def fixed_point_iteration(
         max_iter: int = 100
 ) -> Tuple[float, List[Tuple[int, float, float]]]:
     iterations: List[Tuple[int, float, float]] = []
-    x: float = x0
+    x = x0
 
     for i in range(max_iter):
-        x_new: float = phi(x)
-        error: float = abs(x_new - x)
+        x_new = phi(x)
+        error = abs(x_new - x)
         iterations.append((i, x_new, error))
 
         if error < eps:
@@ -31,18 +31,18 @@ def newton_method(
         max_iter: int = 100
 ) -> Tuple[float, List[Tuple[int, float, float]]]:
     iterations: List[Tuple[int, float, float]] = []
-    x: float = x0
+    x= x0
 
     for i in range(max_iter):
-        fx: float = f(x)
-        dfx: float = df(x)
+        fx = f(x)
+        dfx = df(x)
 
         if abs(dfx) < 1e-10:
             print("Производная близка к нулю")
             break
 
-        x_new: float = x - fx / dfx
-        error: float = abs(x_new - x)
+        x_new = x - fx / dfx
+        error = abs(x_new - x)
         iterations.append((i, x_new, error))
 
         if error < eps:
@@ -65,8 +65,8 @@ def phi(x: float) -> float:
     return math.sqrt(math.log(x + 2))
 
 
-eps: float = 1e-12
-x0: float = 1.5
+eps = 1e-12
+x0 = 1.5
 
 print("=== Метод простой итерации ===")
 root1, iter1 = fixed_point_iteration(phi, x0, eps)
