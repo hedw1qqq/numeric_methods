@@ -19,7 +19,7 @@ def qr_decomposition(A: "Matrix") -> tuple["Matrix", "Matrix"]:
             r_ij = Matrix._dot(q_i, a_j)
             R.data[i][j] = r_ij
 
-            #v = a_j - sum(r_ij * q_i)
+            # v = a_j - sum(r_ij * q_i)
             v = [v_k - r_ij * q_i_k for v_k, q_i_k in zip(v, q_i)]
 
         norm_v = Matrix._norm(v)
@@ -36,7 +36,7 @@ def qr_decomposition(A: "Matrix") -> tuple["Matrix", "Matrix"]:
     return Q, R
 
 
-def find_eigenvalues_qr(A: "Matrix", epsilon: float = 1e-12, max_iterations: int = 1000) -> list[float]:
+def find_eigenvalues_qr(A: "Matrix", epsilon: float = 1e-12, max_iterations: int = 1000) -> list[complex]:
     Ak = A.copy()
     n = A.n
 
@@ -55,12 +55,34 @@ def find_eigenvalues_qr(A: "Matrix", epsilon: float = 1e-12, max_iterations: int
     else:
         print(f"Превышено максимальное количество итераций ({max_iterations}).")
 
-    eigenvalues = [Ak.data[i][i] for i in range(n)]
+    eigenvalues = []
+    i = 0
+
+    while i < n:
+        if i < n - 1 and abs(Ak.data[i + 1][i]) > epsilon:
+            a11 = Ak.data[i][i]
+            a12 = Ak.data[i][i + 1]
+            a21 = Ak.data[i + 1][i]
+            a22 = Ak.data[i + 1][i + 1]
+
+            trace = a11 + a22
+            det = a11 * a22 - a12 * a21
+            discriminant = trace ** 2 - 4 * det
+
+            sqrt_disc = (discriminant + 0j) ** 0.5
+            eigenvalues.append((trace + sqrt_disc) / 2)
+            eigenvalues.append((trace - sqrt_disc) / 2)
+
+            i += 2
+        else:
+            eigenvalues.append(Ak.data[i][i])
+            i += 1
+
     return eigenvalues
 
 
 if __name__ == "__main__":
-    A = Matrix.read_from_file("input")
+    A = Matrix.read_from_file("complex")
     A_np = np.array(A.data)
     eigenvalues = find_eigenvalues_qr(A)
     eigenvalues_np = np.linalg.eig(A_np)
