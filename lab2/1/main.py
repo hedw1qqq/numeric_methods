@@ -1,6 +1,19 @@
 from typing import Callable, List, Tuple
 import math
+import matplotlib.pyplot as plt
+import numpy as np
+xs = np.linspace(-0.9, 5, 1000)   # диапазон подберите по контексту
+fxs = [math.log(x+2) - x**2 for x in xs]
+phis = [math.sqrt(math.log(x+2)) if (x+2)>0 and math.log(x+2) >=0 else float('nan') for x in xs]
 
+plt.figure(figsize=(8,4))
+plt.plot(xs, fxs, label='f(x) = ln(x+2) - x^2')
+plt.axhline(0, color='k', linewidth=0.5)
+plt.scatter([1.05710355], [0], color='red', label='root (approx)')
+plt.title('График f(x) — для выбора начального приближения')
+plt.legend()
+plt.grid(True)
+plt.show()
 
 def fixed_point_iteration(
         phi: Callable[[float], float],
