@@ -1,49 +1,88 @@
-from typing import Callable, List, Tuple
 import math
-import matplotlib.pyplot as plt
 import numpy as np
-xs = np.linspace(-0.9, 5, 1000)   # диапазон подберите по контексту
-fxs = [math.log(x+2) - x**2 for x in xs]
-phis = [math.sqrt(math.log(x+2)) if (x+2)>0 and math.log(x+2) >=0 else float('nan') for x in xs]
+import matplotlib.pyplot as plt
+from typing import Callable, List, Tuple
 
-plt.figure(figsize=(8,4))
+
+def f(x: float) -> float:
+    return math.log(x + 2) - x ** 2
+
+
+def df(x: float) -> float:
+    return 1.0 / (x + 2) - 2 * x
+
+
+def d2f(x: float) -> float:
+    return -1.0 / (x + 2) ** 2 - 2
+
+
+def phi(x: float) -> float:
+    return math.sqrt(math.log(x + 2))
+
+
+def phi_derivative(x: float) -> float:
+    return 1.0 / (2 * (x + 2) * math.sqrt(math.log(x + 2)))
+
+
+xs = np.linspace(-0.9, 5, 1000)
+fxs = [math.log(x + 2) - x ** 2 for x in xs]
+
+plt.figure(figsize=(8, 4))
 plt.plot(xs, fxs, label='f(x) = ln(x+2) - x^2')
 plt.axhline(0, color='k', linewidth=0.5)
-plt.scatter([1.05710355], [0], color='red', label='root (approx)')
+plt.scatter([1.5], [0], color='red', label='root (approx)')
 plt.title('График f(x) — для выбора начального приближения')
 plt.legend()
-plt.savefig('system_plot.png')
 plt.grid(True)
+plt.savefig('system_plot.png')
 plt.show()
 
-def fixed_point_iteration(
-        phi: Callable[[float], float],
-        x0: float,
-        eps: float,
-        max_iter: int = 100
-) -> Tuple[float, List[Tuple[int, float, float]]]:
+
+def fixed_point_iteration(phi, phi_der, x0, eps, a, b, max_iter=100):
+    print(f"\n=== Проверка условий сходимости метода простой итерации ===")
+
+    xs_check = np.linspace(a, b, 1000)
+    q = max(abs(phi_der(x)) for x in xs_check)
+    print(f"q = max|phi'(x)| на [{a}, {b}] = {q:.6f}")
+
+    if q >= 1:
+        raise ValueError(f"Условие сходимости НЕ выполнено: q = {q:.6f} >= 1")
+    print(f"Условие сходимости выполнено: q < 1")
+
     iterations = []
     x = x0
 
     for i in range(max_iter):
         x_new = phi(x)
+
+        if not (a <= x_new <= b):
+            print(f"Предупреждение: phi({x:.4f}) = {x_new:.4f} вне [{a}, {b}]")
+
         error = abs(x_new - x)
         iterations.append((i, x_new, error))
 
         if error < eps:
-            return x_new, iterations
+            return x_new, iterations, q
         x = x_new
 
-    return x, iterations
+    raise ValueError(f"Не сошлось за {max_iter} итераций")
 
 
-def newton_method(
-        f: Callable[[float], float],
-        df: Callable[[float], float],
-        x0: float,
-        eps: float,
-        max_iter: int = 100
-) -> Tuple[float, List[Tuple[int, float, float]]]:
+def newton_method(f, df, d2f, x0, eps, max_iter=100):
+    print(f"\n=== Проверка условий сходимости метода Ньютона ===")
+
+    fx0 = f(x0)
+    d2fx0 = d2f(x0)
+    product = fx0 * d2fx0
+
+    print(f"f(x0) = {fx0:.6f}")
+    print(f"f''(x0) = {d2fx0:.6f}")
+    print(f"f(x0) * f''(x0) = {product:.6f}")
+
+    if product <= 0:
+        raise ValueError(f"Условие сходимости НЕ выполнено: f(x0)*f''(x0) = {product:.6f} <= 0")
+    print(f"Условие сходимости выполнено: f(x0)*f''(x0) > 0")
+
     iterations = []
     x = x0
 
@@ -52,8 +91,7 @@ def newton_method(
         dfx = df(x)
 
         if abs(dfx) < 1e-10:
-            print("Производная близка к нулю")
-            break
+            raise ValueError("Производная близка к нулю")
 
         x_new = x - fx / dfx
         error = abs(x_new - x)
@@ -63,47 +101,51 @@ def newton_method(
             return x_new, iterations
         x = x_new
 
-    return x, iterations
-
-
-#  ln(x+2) -x^2 = 0
-def f(x: float) -> float:
-    return math.log(x + 2) - x ** 2
-
-
-def df(x: float) -> float:
-    return 1.0 / (x + 2) - 2 * x
-
-
-def phi(x: float) -> float:
-    return math.sqrt(math.log(x + 2))
+    raise ValueError(f"Не сошлось за {max_iter} итераций")
 
 
 eps = 1e-12
 x0 = 1.5
+a, b = 0.5, 2.0
 
-print("=== Метод простой итерации ===")
-root1, iter1 = fixed_point_iteration(phi, x0, eps)
-print(f"Корень: {root1:.10f}")
+print("=" * 60)
+print("РЕШЕНИЕ УРАВНЕНИЯ ln(x+2) - x² = 0")
+print("=" * 60)
+
+print("\n" + "=" * 60)
+print("МЕТОД ПРОСТОЙ ИТЕРАЦИИ")
+print("=" * 60)
+root1, iter1, q = fixed_point_iteration(phi, phi_derivative, x0, eps, a, b)
+print(f"\nКорень: {root1:.10f}")
 print(f"Итераций: {len(iter1)}")
-print(f"f(x) = {f(root1):.2e}\n")
+print(f"f(x) = {f(root1):.2e}")
+print(f"Коэффициент сжатия q = {q:.6f}")
 
-print("Итерация | Приближение | Погрешность")
+print("\nИтерация | Приближение | Погрешность")
 print("-" * 45)
-for i, x, err in iter1:
+for i, x, err in iter1[:5]:
     print(f"{i:8d} | {x:11.8f} | {err:.2e}")
+if len(iter1) > 5:
+    print("...")
+    for i, x, err in iter1[-2:]:
+        print(f"{i:8d} | {x:11.8f} | {err:.2e}")
 
-print("\n=== Метод Ньютона ===")
-root2, iter2 = newton_method(f, df, x0, eps)
-print(f"Корень: {root2:.10f}")
+print("\n" + "=" * 60)
+print("МЕТОД НЬЮТОНА")
+print("=" * 60)
+root2, iter2 = newton_method(f, df, d2f, x0, eps)
+print(f"\nКорень: {root2:.10f}")
 print(f"Итераций: {len(iter2)}")
-print(f"f(x) = {f(root2):.2e}\n")
+print(f"f(x) = {f(root2):.2e}")
 
-print("Итерация | Приближение | Погрешность")
+print("\nИтерация | Приближение | Погрешность")
 print("-" * 45)
 for i, x, err in iter2:
     print(f"{i:8d} | {x:11.8f} | {err:.2e}")
 
-print("\n=== Анализ сходимости ===")
-print(f"Метод простой итерации: {len(iter1)} итераций")
-print(f"Метод Ньютона: {len(iter2)} итераций")
+print("\n" + "=" * 60)
+print("АНАЛИЗ СХОДИМОСТИ")
+print("=" * 60)
+print(f"Метод простой итерации: {len(iter1)} итераций (линейная сходимость, q={q:.4f})")
+print(f"Метод Ньютона: {len(iter2)} итераций (квадратичная сходимость)")
+print(f"Ньютон быстрее в {len(iter1) / len(iter2):.1f} раз")
