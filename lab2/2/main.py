@@ -134,7 +134,7 @@ def check_simple_iteration_convergence(phi, jacobian_phi, x0):
         return True, q
 
 
-def simple_iteration(x0: list[float], tol: float) -> tuple[list[float], list[int], list[float]]:
+def simple_iteration(x0: list[float], tol: float, max_iter: int = 10000) -> tuple[list[float], list[int], list[float]]:
     """
     Метод простой итерации: x(k+1) = phi(x(k))
     Останавливается когда ||x(k+1) - x(k)|| < tol
@@ -143,7 +143,7 @@ def simple_iteration(x0: list[float], tol: float) -> tuple[list[float], list[int
     iterations = []
     errors = []
 
-    for k in range(10000):
+    for k in range(max_iter):
         x_new = phi(x)
         error = norm([x_new[i] - x[i] for i in range(2)])
 
@@ -153,11 +153,11 @@ def simple_iteration(x0: list[float], tol: float) -> tuple[list[float], list[int
         if error < tol:
             return x_new, iterations, errors
         x = x_new
-
+    print(f"Метод не сошелся за {max_iter} итераций")
     return x, iterations, errors
 
 
-def newton(x0: list[float], tol: float) -> tuple[list[float], list[int], list[float]]:
+def newton(x0: list[float], tol: float, max_iter: int = 100) -> tuple[list[float], list[int], list[float]]:
     """
     Метод Ньютона: x(k+1) = x(k) - J^(-1) * F(x(k))
     На каждой итерации решаем линейную систему J*delta = -F(x)
@@ -166,7 +166,7 @@ def newton(x0: list[float], tol: float) -> tuple[list[float], list[int], list[fl
     iterations = []
     errors = []
 
-    for k in range(100):
+    for k in range(max_iter):
         fx = f(x)
         J = jacobian(x)
         #  J * delta = -F(x) методом Крамера
@@ -181,7 +181,7 @@ def newton(x0: list[float], tol: float) -> tuple[list[float], list[int], list[fl
         if error < tol:
             return x_new, iterations, errors
         x = x_new
-
+    print(f"Метод не сошелся за {max_iter} итераций")
     return x, iterations, errors
 
 
