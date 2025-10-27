@@ -12,6 +12,7 @@ plt.axhline(0, color='k', linewidth=0.5)
 plt.scatter([1.05710355], [0], color='red', label='root (approx)')
 plt.title('График f(x) — для выбора начального приближения')
 plt.legend()
+plt.savefig('system_plot.png')
 plt.grid(True)
 plt.show()
 
