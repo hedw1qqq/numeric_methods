@@ -43,7 +43,7 @@ def phi(x: list[float]) -> list[float]:
     # Из второго уравнения выражаем x1
     discriminant = a ** 2 - (x2_new - a / 2) ** 2
     if discriminant < 0:
-        return [x1, x2_new]
+        raise ValueError(f"Дискриминант отрицательный: {discriminant}")
     x1_new = a / 2 + math.sqrt(discriminant)
     return [x1_new, x2_new]
 
