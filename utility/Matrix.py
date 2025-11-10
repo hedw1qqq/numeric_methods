@@ -181,7 +181,13 @@ class Matrix:
         return det
 
     def inverse(self) -> "Matrix":
-
+        #
+        # A·x_j = e_j
+        # => PA·x_j = P·e_j
+        # => L·U·x_j = P·e_j
+        # => Ly = P·e_j
+        # => Ux_j = y
+        # => столбец x_j -> в A^{-1}
         n = self.n
         L, U, p, _ = self.lu_decomposition()
 
