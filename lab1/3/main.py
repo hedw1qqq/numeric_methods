@@ -85,7 +85,7 @@ def solve_seidel(A: Matrix, b: list[float], eps: float = 1e-6, max_iter: int = 1
     print(f"Норма матрицы итераций Зейделя: {alpha:.5f}")
 
     x = [0.0] * n
-
+    # xi^k+1 = 1/a[i][i] ( b[i]- sum(a[i][j] * x[j]^k+1) (j < i) - sum(a[i][j]x^k[j])
     for k in range(1, max_iter + 1):
         x_old = x[:]
 
