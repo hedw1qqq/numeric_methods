@@ -1,5 +1,7 @@
 import math
 
+from matplotlib import pyplot as plt
+
 
 def lagrange_eval(xs, ys, t):
     """
@@ -38,17 +40,7 @@ def newton_divdiff(xs, ys):
     [x_i,x_j] = (f(x_j) - f(x_i))/(x_j - x_i)        (порядок 1)
     [x_i,...,x_k] = ([x_{i+1},...,x_k] - [x_i,...,x_{k-1}])/(x_k - x_i)
 
-    Таблица разделённых разностей (табл. 3.1 методички):
-    x_0  y_0  [x_0,x_1]  [x_0,x_1,x_2]  [x_0,x_1,x_2,x_3]
-    x_1  y_1  [x_1,x_2]  [x_1,x_2,x_3]
-    x_2  y_2  [x_2,x_3]
-    x_3  y_3
 
-    Параметры:
-    xs - список узлов [x_0, x_1, ..., x_n]
-    ys - список значений [f(x_0), f(x_1), ..., f(x_n)]
-
-    Возвращает: [a_0, a_1, ..., a_n], где a_k = [x_0,...,x_k]
     """
     a = ys[:]
     n = len(xs)
@@ -98,6 +90,37 @@ def remainder_bound(xs, t, M):
     return M * prod / math.factorial(len(xs))
 
 
+def plot_interpolation(xs, ys, name):
+    """
+    Строит график интерполяционного полинома, исходной функции и узлов.
+    """
+    t_vals = [min(xs) + (max(xs) - min(xs)) * k / 200 for k in range(201)]
+
+    true_vals = [math.cos(t) for t in t_vals]
+
+    interp_vals = [lagrange_eval(xs, ys, t) for t in t_vals]
+
+    L_xstar = lagrange_eval(xs, ys, x_star)
+
+    plt.figure(figsize=(8, 5))
+
+    plt.plot(t_vals, true_vals, 'k--', label='y = cos(x)', linewidth=1.5, alpha=0.7)
+
+    plt.plot(t_vals, interp_vals, 'b-', label='Полином Лагранжа/Ньютона', linewidth=2)
+
+    plt.scatter(xs, ys, color='red', s=80, zorder=5, label='Узлы интерполяции')
+
+    plt.scatter([x_star], [L_xstar], color='green', s=100, marker='s',
+                zorder=5, label=f'X* = π/4')
+
+    plt.title(f'Интерполяция полиномом степени 3 — {name}')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.grid(True, alpha=0.3)
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.show()
+
 pi = math.pi
 f = math.cos
 x_star = pi / 4
@@ -128,5 +151,8 @@ def report(xs, ys, name):
     print(f"теоретическая верхняя граница погрешности интерполяции ≤ {bound:.12e}")
 
 
-report(Xa, Ya, "Variant (a)")
-report(Xb, Yb, "Variant (b)")
+report(Xa, Ya, "Вариант (a)")
+report(Xb, Yb, "Вариант (б)")
+
+plot_interpolation(Xa, Ya, "Вариант (a)")
+plot_interpolation(Xb, Yb, "Вариант (б)")
