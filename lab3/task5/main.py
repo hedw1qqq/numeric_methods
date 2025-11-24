@@ -6,7 +6,6 @@ def f(x: float) -> float:
 
 
 def integral_rect(a: float, b: float, h: float) -> float:
-    """Метод средних прямоугольников (формула 3.23)."""
     n = int((b - a) / h)
     s = 0.0
     for i in range(n):
@@ -37,7 +36,6 @@ def integral_simp(a: float, b: float, h: float) -> float:
 
 
 def runge_romberg(F_h1: float, F_h2: float, k: float, p: int) -> float:
-    """Оценка по методу Рунге–Ромберга (формула 3.30)."""
     return F_h2 + (F_h2 - F_h1) / (k ** p - 1.0)
 
 
