@@ -1,6 +1,8 @@
 import math
 from typing import List, Tuple, Callable
 
+from matplotlib import pyplot as plt
+
 # --- Типы данных ---
 Vector = List[float]
 DerivativeFunc = Callable[[float, Vector], Vector]
@@ -118,7 +120,6 @@ def finite_difference_method(
 
     # Прямой ход
     for i in range(0, N - 1):
-
         xi = xs[i + 1]
 
         # y'' + (2/x)y' - y = 0
@@ -138,9 +139,6 @@ def finite_difference_method(
         F = f_val * h * h
 
         # Формулы для alpha и beta на следующем шаге
-        # alpha_{i+1} = B / (C - A * alpha_i)
-        # beta_{i+1} = (F + A * beta_i) / (C - A * alpha_i)
-
         denom = C - A * alpha[i]
         alpha[i + 1] = B / denom
         beta[i + 1] = (F + A * beta[i]) / denom
@@ -164,29 +162,45 @@ def calculate_point_errors(
     return rr, abs_err, rel_err
 
 
+def plot_method(xs: List[float],
+                ys_num: List[float],
+                title: str,
+                method_label: str,
+                color: str = 'r',
+                marker: str = 'o') -> None:
+    ys_exact = [exact_solution(x) for x in xs]
+
+    plt.figure(figsize=(7, 5))
+    plt.plot(xs, ys_exact, 'k-', linewidth=2, label='Точное решение')
+    plt.plot(xs, ys_num, color + marker + '--', label=method_label, markersize=6)
+
+    plt.xlabel('x', fontsize=12)
+    plt.ylabel('y(x)', fontsize=12)
+    plt.title(title, fontsize=14)
+    plt.grid(True, alpha=0.3)
+    plt.legend(fontsize=11)
+    plt.tight_layout()
+
+
 def main():
     x0, xN = 1.0, 2.0
     y_start = math.exp(-1.0) / 1.0
     y_end = math.exp(-2.0) / 2.0
     h = 0.1
 
-    # 1. Генерация сеток
     xs = generate_grid(x0, xN, h)
     xs_h2 = generate_grid(x0, xN, h / 2.0)
 
-    # 2. Решения на основной сетке
     ys_shoot = shooting_method(xs, y_start, y_end)
     ys_fd = finite_difference_method(xs, y_start, y_end)
 
-    # 3. Решения на мелкой сетке (для оценки точности)
     ys_shoot_h2 = shooting_method(xs_h2, y_start, y_end)
     ys_fd_h2 = finite_difference_method(xs_h2, y_start, y_end)
 
-    # 4. Вывод результатов
     h1 = (
         f"{'x':^4} | {'РЕШЕНИЯ (y)':^38} || "
         f"{'ОШИБКА РУНГЕ-РОМБЕРГА':^21} | "
-        f"{'АБСОЛЮТНАЯ ПОГРЕШНОСТЬ':^18} | "
+        f"{'АБСОЛЮТНАЯ ПОГРЕШНОСТЬ':^21} | "
         f"{'ОТНОСИТЕЛЬНАЯ (%)':^21}"
     )
 
@@ -212,7 +226,6 @@ def main():
         val_sh = ys_shoot[i]
         val_fd = ys_fd[i]
 
-        # Сравниваем с точками на мелкой сетке
         val_sh_small = ys_shoot_h2[i * 2]
         val_fd_small = ys_fd_h2[i * 2]
 
@@ -229,6 +242,32 @@ def main():
             f"{abs_sh:^10.2e} {abs_fd:^10.2e} | "
             f"{rel_sh:^9.5f} {rel_fd:^9.5f}"
         )
+
+    plot_method(xs, ys_shoot,
+                'Метод стрельбы для краевой задачи',
+                'Метод стрельбы',
+                color='b', marker='o')
+
+    plot_method(xs, ys_fd,
+                'Конечно-разностный метод (метод прогонки)',
+                'КРМ',
+                color='r', marker='s')
+
+    ys_exact = [exact_solution(x) for x in xs]
+
+    plt.figure(figsize=(9, 6))
+    plt.plot(xs, ys_exact, 'k-', linewidth=2.5, label='Точное решение')
+    plt.plot(xs, ys_shoot, 'bo--', label='Метод стрельбы', markersize=6)
+    plt.plot(xs, ys_fd, 'rs--', label='КРМ', markersize=6)
+
+    plt.xlabel('x', fontsize=12)
+    plt.ylabel('y(x)', fontsize=12)
+    plt.title('Сравнение методов решения краевой задачи', fontsize=14)
+    plt.grid(True, alpha=0.3)
+    plt.legend(fontsize=11)
+    plt.tight_layout()
+
+    plt.show()
 
 
 if __name__ == "__main__":

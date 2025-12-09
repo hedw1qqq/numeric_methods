@@ -1,6 +1,8 @@
 import math
 from typing import List, Tuple, Callable
 
+import matplotlib.pyplot as plt
+
 # --- Типы данных ---
 Vector = List[float]
 DerivativeFunc = Callable[[float, Vector], Vector]
@@ -42,7 +44,7 @@ def ode_system(x: float, Y: Vector) -> Vector:
 def euler_method(
         func: DerivativeFunc, xs: List[float], y0: Vector
 ) -> List[Vector]:
-    """Метод Эйлера на заданной сетке."""
+
     ys = [y0]
     curr_y = y0
 
@@ -56,10 +58,59 @@ def euler_method(
     return ys
 
 
+def improved_euler_first(
+        func: DerivativeFunc, xs: List[float], y0: Vector
+) -> List[Vector]:
+    """
+    Формула: y_{n+1} = y_n + h * f(x_n + h/2, y_n + h/2 * f(x_n, y_n)).
+    """
+    ys = [y0]
+    curr_y = y0
+
+    for i in range(len(xs) - 1):
+        curr_x = xs[i]
+        h = xs[i + 1] - curr_x
+
+        k1 = func(curr_x, curr_y)
+
+        y_mid = vec_add(curr_y, vec_scale(k1, h * 0.5))
+        k_mid = func(curr_x + 0.5 * h, y_mid)  # f(x_n + h/2, y_n + h/2*k1)
+
+        curr_y = vec_add(curr_y, vec_scale(k_mid, h))
+        ys.append(curr_y)
+    return ys
+
+
+def euler_cauchy_method(
+        func: DerivativeFunc, xs: List[float], y0: Vector
+) -> List[Vector]:
+    ys = [y0]
+    curr_y = y0
+
+    for i in range(len(xs) - 1):
+        curr_x = xs[i]
+        h = xs[i + 1] - curr_x
+
+        k1 = func(curr_x, curr_y)
+
+        # Предиктор: шаг Эйлера
+        y_pred = vec_add(curr_y, vec_scale(k1, h))
+
+        # k2 — производная в конце шага
+        k2 = func(curr_x + h, y_pred)
+
+        # Корректор: среднее из k1 и k2
+        avg = vec_scale(vec_add(k1, k2), 0.5)
+        curr_y = vec_add(curr_y, vec_scale(avg, h))
+
+        ys.append(curr_y)
+    return ys
+
+
 def runge_kutta_4(
         func: DerivativeFunc, xs: List[float], y0: Vector
 ) -> List[Vector]:
-    """Метод Рунге-Кутты 4-го порядка на заданной сетке."""
+    """Метод Рунге–Кутты 4-го порядка на заданной сетке."""
     ys = [y0]
     curr_y = y0
 
@@ -91,24 +142,24 @@ def runge_kutta_4(
 def adams_bashforth_4(
         func: DerivativeFunc, xs: List[float], y0: Vector
 ) -> List[Vector]:
-    """Метод Адамса 4-го порядка на заданной сетке."""
-    # Разгон: первые 4 точки берем из РК4
+    """Метод Адамса–Башфорта 4-го порядка на заданной сетке."""
+    # Разгон: первые 4 точки берём из РК4
     rk_full = runge_kutta_4(func, xs[:4], y0)
 
     ys = []
-    ys.extend(rk_full)
+    ys.extend(rk_full)  # [y0, y1, y2, y3]
 
     for i in range(3, len(xs) - 1):
         curr_x = xs[i]
         h = xs[i + 1] - curr_x
 
         # Значения производных в предыдущих узлах
-        f0 = func(xs[i], ys[i])  # f_i
+        f0 = func(xs[i], ys[i])          # f_i
         f1 = func(xs[i - 1], ys[i - 1])  # f_{i-1}
         f2 = func(xs[i - 2], ys[i - 2])  # f_{i-2}
         f3 = func(xs[i - 3], ys[i - 3])  # f_{i-3}
 
-        # Формула Адамса
+        # Формула Адамса–Башфорта 4-го порядка
         combo = vec_add(
             vec_add(vec_scale(f0, 55), vec_scale(f1, -59)),
             vec_add(vec_scale(f2, 37), vec_scale(f3, -9))
@@ -128,10 +179,6 @@ def calculate_point_errors(
         y_exact: float,
         p: int
 ) -> ErrorTuple:
-    """
-    Считает ошибки в конкретной точке.
-    Возвращает кортеж: (Рунге-Ромберг, Абсолютная, Относительная %)
-    """
     rr_error = abs(y_h - y_h2) / (2 ** p - 1)
     abs_error = abs(y_h - y_exact)
     if abs(y_exact) > 1e-14:
@@ -139,6 +186,26 @@ def calculate_point_errors(
     else:
         rel_error_pct = 0.0
     return rr_error, abs_error, rel_error_pct
+
+
+def plot_method(xs: List[float],
+                ys_num: List[float],
+                title: str,
+                method_label: str,
+                color: str = 'r',
+                marker: str = 'o') -> None:
+    ys_exact = [exact_solution(x) for x in xs]
+
+    plt.figure(figsize=(7, 5))
+    plt.plot(xs, ys_exact, 'k-', label='Точное решение')
+    plt.plot(xs, ys_num, color + marker + '--', label=method_label)
+
+    plt.xlabel('x')
+    plt.ylabel('y(x)')
+    plt.title(title)
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
 
 
 def main():
@@ -152,26 +219,32 @@ def main():
 
     # 2. Решения на основной сетке
     res_eu = euler_method(ode_system, xs, y_start)
+    res_ie1 = improved_euler_first(ode_system, xs, y_start)
+    res_ie2 = euler_cauchy_method(ode_system, xs, y_start)
     res_rk = runge_kutta_4(ode_system, xs, y_start)
     res_ad = adams_bashforth_4(ode_system, xs, y_start)
 
-    # 3. Решения на мелкой сетке (для Рунге-Ромберга)
+    # 3. Решения на мелкой сетке (для Рунге–Ромберга)
     res_eu_h2 = euler_method(ode_system, xs_h2, y_start)
+    res_ie1_h2 = improved_euler_first(ode_system, xs_h2, y_start)
+    res_ie2_h2 = euler_cauchy_method(ode_system, xs_h2, y_start)
     res_rk_h2 = runge_kutta_4(ode_system, xs_h2, y_start)
     res_ad_h2 = adams_bashforth_4(ode_system, xs_h2, y_start)
 
-    # --- Вывод ---
+    # --- Табличный вывод (можно при желании урезать) ---
+
     h1 = (
-        f"{'x':^4} | {'РЕШЕНИЯ (y)':^51} || "
-        f"{'ОШИБКА РУНГЕ-РОМБЕРГА':^32} | "
-        f"{'АБСОЛЮТНАЯ ПОГРЕШНОСТЬ':^32} | "
-        f"{'ОТНОСИТЕЛЬНАЯ (%)':^30}"
+        f"{'x':^4} | {'РЕШЕНИЯ (y)':^75} || "
+        f"{'ОШИБКА РУНГЕ-РОМБЕРГА':^55} | "
+        f"{'АБСОЛЮТНАЯ ПОГРЕШНОСТЬ':^55} | "
+        f"{'ОТНОСИТЕЛЬНАЯ (%)':^55}"
     )
     h2 = (
-        f"{'':^4} | {'Точное':^12} {'Эйлер':^12} {'РК':^12} {'Адамс':^12} || "
-        f"{'Эйлер':^10} {'РК':^10} {'Адамс':^10} | "
-        f"{'Эйлер':^10} {'РК':^10} {'Адамс':^10} | "
-        f"{'Эйлер':^9} {'РК':^10} {'Адамс':^9}"
+        f"{'':^4} | "
+        f"{'Точное':^12} {'Эйлер':^12} {'Ул1':^12} {'Эйлер-Коши':^12} {'РК4':^12} {'Адамс':^12} || "
+        f"{'Эйлер':^10} {'Ул1':^10} {'Эйл-Коши':^10} {'РК4':^10} {'Адамс':^10} | "
+        f"{'Эйлер':^10} {'Ул1':^10} {'Эйл-Коши':^10} {'РК4':^10} {'Адамс':^10} | "
+        f"{'Эйлер':^9} {'Ул1':^9} {'Эйл-Коши':^9} {'РК4':^9} {'Адамс':^9}"
     )
 
     print("=" * len(h1))
@@ -179,40 +252,64 @@ def main():
     print("-" * len(h1))
     print(h2)
     print("=" * len(h1))
+
     for i in range(len(xs)):
         x_curr = xs[i]
         y_ex = exact_solution(x_curr)
 
-        y_eu, y_rk, y_ad = res_eu[i][0], res_rk[i][0], res_ad[i][0]
+        y_eu = res_eu[i][0]
+        y_ie1 = res_ie1[i][0]
+        y_ie2 = res_ie2[i][0]
+        y_rk = res_rk[i][0]
+        y_ad = res_ad[i][0]
 
         # Значения на мелкой сетке (индекс i*2)
         y_eu_small = res_eu_h2[i * 2][0]
+        y_ie1_small = res_ie1_h2[i * 2][0]
+        y_ie2_small = res_ie2_h2[i * 2][0]
         y_rk_small = res_rk_h2[i * 2][0]
         y_ad_small = res_ad_h2[i * 2][0]
 
-        # --- Использование функции расчета ошибок ---
-        # Эйлер (p=1)
+        # Ошибки
         err_eu = calculate_point_errors(y_eu, y_eu_small, y_ex, p=1)
-        # Рунге-Кутта (p=4)
+        err_ie1 = calculate_point_errors(y_ie1, y_ie1_small, y_ex, p=2)
+        err_ie2 = calculate_point_errors(y_ie2, y_ie2_small, y_ex, p=2)
         err_rk = calculate_point_errors(y_rk, y_rk_small, y_ex, p=4)
-        # Адамс (p=4)
         err_ad = calculate_point_errors(y_ad, y_ad_small, y_ex, p=4)
 
         rr_eu, abs_eu, rel_eu = err_eu
+        rr_ie1, abs_ie1, rel_ie1 = err_ie1
+        rr_ie2, abs_ie2, rel_ie2 = err_ie2
         rr_rk, abs_rk, rel_rk = err_rk
         rr_ad, abs_ad, rel_ad = err_ad
 
         print(
             f"{x_curr:^4.1f} | "
-            # Блок решений (8 знаков после запятой)
-            f"{y_ex:^12.8f} {y_eu:^12.8f} {y_rk:^12.8f} {y_ad:^12.8f} || "
-            # Блок Рунге-Ромберга (научная нотация)
-            f"{rr_eu:^10.2e} {rr_rk:^10.2e} {rr_ad:^10.2e} | "
-            # Блок Абсолютной ошибки (научная нотация)
-            f"{abs_eu:^10.2e} {abs_rk:^10.2e} {abs_ad:^10.2e} | "
-            # Блок Относительной ошибки
-            f"{rel_eu:^9.4f} {rel_rk:^10.6f} {rel_ad:^9.6f}"
+            f"{y_ex:^12.8f} {y_eu:^12.8f} {y_ie1:^12.8f} {y_ie2:^12.8f} {y_rk:^12.8f} {y_ad:^12.8f} || "
+            f"{rr_eu:^10.2e} {rr_ie1:^10.2e} {rr_ie2:^10.2e} {rr_rk:^10.2e} {rr_ad:^10.2e} | "
+            f"{abs_eu:^10.2e} {abs_ie1:^10.2e} {abs_ie2:^10.2e} {abs_rk:^10.2e} {abs_ad:^10.2e} | "
+            f"{rel_eu:^9.5f} {rel_ie1:^9.5f} {rel_ie2:^9.5f} {rel_rk:^9.5f} {rel_ad:^9.5f}"
         )
+
+    # --- Отдельные графики для каждого метода ---
+
+    ys_eu = [y[0] for y in res_eu]
+    ys_ie1 = [y[0] for y in res_ie1]
+    ys_ie2 = [y[0] for y in res_ie2]
+    ys_rk = [y[0] for y in res_rk]
+    ys_ad = [y[0] for y in res_ad]
+
+    plot_method(xs, ys_eu, 'Метод Эйлера', 'Эйлер', color='r', marker='o')
+    plot_method(xs, ys_ie1, 'Первый улучшенный метод Эйлера (midpoint)',
+                'Улучшенный Эйлер 1', color='b', marker='s')
+    plot_method(xs, ys_ie2, 'Метод Эйлера–Коши (Heun)',
+                'Эйлер–Коши', color='g', marker='^')
+    plot_method(xs, ys_rk, 'Метод Рунге–Кутты 4-го порядка',
+                'Рунге–Кутта 4', color='m', marker='d')
+    plot_method(xs, ys_ad, 'Метод Адамса–Башфорта 4-го порядка',
+                'Адамс 4', color='c', marker='x')
+
+    plt.show()
 
 
 if __name__ == "__main__":
