@@ -44,7 +44,6 @@ def ode_system(x: float, Y: Vector) -> Vector:
 def euler_method(
         func: DerivativeFunc, xs: List[float], y0: Vector
 ) -> List[Vector]:
-
     ys = [y0]
     curr_y = y0
 
@@ -61,9 +60,6 @@ def euler_method(
 def improved_euler_first(
         func: DerivativeFunc, xs: List[float], y0: Vector
 ) -> List[Vector]:
-    """
-    Формула: y_{n+1} = y_n + h * f(x_n + h/2, y_n + h/2 * f(x_n, y_n)).
-    """
     ys = [y0]
     curr_y = y0
 
@@ -71,10 +67,13 @@ def improved_euler_first(
         curr_x = xs[i]
         h = xs[i + 1] - curr_x
 
+        # наклон в начале
         k1 = func(curr_x, curr_y)
 
         y_mid = vec_add(curr_y, vec_scale(k1, h * 0.5))
-        k_mid = func(curr_x + 0.5 * h, y_mid)  # f(x_n + h/2, y_n + h/2*k1)
+
+        # наклон в средин
+        k_mid = func(curr_x + 0.5 * h, y_mid)
 
         curr_y = vec_add(curr_y, vec_scale(k_mid, h))
         ys.append(curr_y)
@@ -154,7 +153,7 @@ def adams_bashforth_4(
         h = xs[i + 1] - curr_x
 
         # Значения производных в предыдущих узлах
-        f0 = func(xs[i], ys[i])          # f_i
+        f0 = func(xs[i], ys[i])  # f_i
         f1 = func(xs[i - 1], ys[i - 1])  # f_{i-1}
         f2 = func(xs[i - 2], ys[i - 2])  # f_{i-2}
         f3 = func(xs[i - 3], ys[i - 3])  # f_{i-3}
@@ -213,25 +212,20 @@ def main():
     x_start, x_finish, h = 0.0, 1.0, 0.1
     y_start = [1.0, 0.0]
 
-    # 1. Генерация сеток
     xs = generate_grid(x_start, x_finish, h)
     xs_h2 = generate_grid(x_start, x_finish, h / 2.0)
 
-    # 2. Решения на основной сетке
     res_eu = euler_method(ode_system, xs, y_start)
     res_ie1 = improved_euler_first(ode_system, xs, y_start)
     res_ie2 = euler_cauchy_method(ode_system, xs, y_start)
     res_rk = runge_kutta_4(ode_system, xs, y_start)
     res_ad = adams_bashforth_4(ode_system, xs, y_start)
 
-    # 3. Решения на мелкой сетке (для Рунге–Ромберга)
     res_eu_h2 = euler_method(ode_system, xs_h2, y_start)
     res_ie1_h2 = improved_euler_first(ode_system, xs_h2, y_start)
     res_ie2_h2 = euler_cauchy_method(ode_system, xs_h2, y_start)
     res_rk_h2 = runge_kutta_4(ode_system, xs_h2, y_start)
     res_ad_h2 = adams_bashforth_4(ode_system, xs_h2, y_start)
-
-    # --- Табличный вывод (можно при желании урезать) ---
 
     h1 = (
         f"{'x':^4} | {'РЕШЕНИЯ (y)':^75} || "
@@ -291,8 +285,6 @@ def main():
             f"{rel_eu:^9.5f} {rel_ie1:^9.5f} {rel_ie2:^9.5f} {rel_rk:^9.5f} {rel_ad:^9.5f}"
         )
 
-    # --- Отдельные графики для каждого метода ---
-
     ys_eu = [y[0] for y in res_eu]
     ys_ie1 = [y[0] for y in res_ie1]
     ys_ie2 = [y[0] for y in res_ie2]
@@ -311,6 +303,28 @@ def main():
 
     plt.show()
 
+    plt.figure(figsize=(10, 7))
 
+    ys_exact = [exact_solution(x) for x in xs]
+    ys_eu = [y[0] for y in res_eu]
+    ys_ie1 = [y[0] for y in res_ie1]
+    ys_ie2 = [y[0] for y in res_ie2]
+    ys_rk = [y[0] for y in res_rk]
+    ys_ad = [y[0] for y in res_ad]
+
+    plt.plot(xs, ys_exact, 'k-', linewidth=2, label='Точное решение')
+
+    plt.plot(xs, ys_eu, 'r--o', label='Эйлер ', markersize=5)
+    plt.plot(xs, ys_ie1, 'b--s', label='Улучш. Эйлер 1', markersize=5)
+    plt.plot(xs, ys_ie2, 'g--^', label='Эйлер–Коши ', markersize=5)
+    plt.plot(xs, ys_rk, 'm--d', label='Рунге–Кутта 4 ', markersize=5)
+    plt.plot(xs, ys_ad, 'c--x', label='Адамс 4', markersize=5)
+
+    plt.xlabel('x', fontsize=12)
+    plt.ylabel('y(x)', fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.legend(fontsize=10)
+    plt.tight_layout()
+    plt.show()
 if __name__ == "__main__":
     main()

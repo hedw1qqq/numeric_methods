@@ -152,7 +152,6 @@ def finite_difference_method(
     return ys
 
 
-# --- Расчет ошибок ---
 def calculate_point_errors(
         val_h: float, val_h2: float, val_ex: float, p: int
 ) -> ErrorTuple:
