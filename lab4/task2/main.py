@@ -84,7 +84,6 @@ def shooting_method(
     res1 = solve_cauchy_on_grid(func_shoot, xs, [y_start, alpha1])
     phi1 = res1[-1][0] - y_end
 
-    # 3. Метод секущих
     iter_count = 0
     while abs(phi1) > eps and iter_count < 100:
         denom = phi1 - phi0
@@ -99,7 +98,6 @@ def shooting_method(
         phi1 = res_new[-1][0] - y_end
         iter_count += 1
 
-    # Финальный расчет
     final_res = solve_cauchy_on_grid(func_shoot, xs, [y_start, alpha1])
     return [v[0] for v in final_res]
 
